@@ -64,13 +64,26 @@ const ToolCall = (props: {
           </span>
           <strong>Tool Call:</strong> {toolInvocation.toolName}
         </button>
+
         {/* Render result below, outside the button, to avoid shifting the button */}
-        {isOpen && toolInvocation.state === "result" && (
+        {isOpen && (
           <div>
-            <span className="text-sm font-medium text-gray-400">Result:</span>
+            <span className="text-sm font-medium text-gray-400">
+              Arguments:
+            </span>
             <pre className="mt-1 overflow-x-auto rounded bg-gray-900 p-2 text-sm">
-              {JSON.stringify(toolInvocation.result, null, 2)}
+              {JSON.stringify(toolInvocation.args, null, 2)}
             </pre>
+            {toolInvocation.state === "result" && (
+              <>
+                <span className="mt-2 block text-sm font-medium text-gray-400">
+                  Result:
+                </span>
+                <pre className="mt-1 overflow-x-auto rounded bg-gray-900 p-2 text-sm">
+                  {JSON.stringify(toolInvocation.result, null, 2)}
+                </pre>
+              </>
+            )}
           </div>
         )}
       </div>

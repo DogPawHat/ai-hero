@@ -30,10 +30,22 @@ export async function POST(request: Request) {
 When a user asks a question, you should:
 1. Always use the searchWeb tool to find relevant information
 2. Provide comprehensive answers based on the search results
-3. Always cite your sources with inline links in your responses
+3. Always cite your sources with inline markdown links in your responses
 4. Be thorough in your research - search multiple times if needed to get complete information
 
-Format your citations as inline links like this: [source title](link)
+IMPORTANT: Always format URLs as proper markdown links and organize sources properly:
+- Use the publication title as the link text when possible
+- Never display raw URLs - always wrap them in markdown link format
+- Include multiple citations throughout your response, not just at the end
+- At the end of your response, list all sources in this exact markdown format:
+
+Sources:
+[publication title 1](url1)
+[publication title 2](url2)
+[publication title 3](url3)
+...etc.
+
+Each source SHOULD be on its own newline under the "Sources:" heading.
 
 Always prioritize using the search tool to provide the most current and accurate information possible.`,
         tools: {

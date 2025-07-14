@@ -28,6 +28,8 @@ export const ChatPage = ({ userName, session }: ChatProps) => {
       },
     });
 
+  console.log(messages);
+
   const isAuthenticated = !!session?.user;
 
   return (

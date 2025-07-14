@@ -42,23 +42,29 @@ const components: Components = {
 const ToolCall = (props: {
   part: Extract<MessagePart, { type: "tool-invocation" }>;
   isOpen: boolean;
-  toggleOpen: (idx: number) => void;
+  toggleOpen: () => void;
 }) => {
   const { toolInvocation } = props.part;
   const isOpen = props.isOpen;
   return (
     <div className="my-2 rounded bg-gray-700 p-2" title="ToolInvocationUIPart">
-      <button
-        type="button"
-        className="flex items-center gap-1 font-mono text-xs text-blue-300 hover:underline focus:outline-none"
-        onClick={() => props.toggleOpen(props.part.toolInvocation.toolCallId)}
-      >
-        {isOpen ? (
-          <ChevronDown className="inline size-4" />
-        ) : (
-          <ChevronRight className="inline size-4" />
-        )}
-        <strong>Tool Call:</strong> {toolInvocation.toolName}
+      <div>
+        <button
+          type="button"
+          className="flex items-center gap-1 font-mono text-xs text-blue-300 hover:underline focus:outline-none"
+          onClick={() => props.toggleOpen()}
+        >
+          {/* Reserve space for the icon so layout doesn't shift */}
+          <span className="inline-flex size-4 items-center justify-center">
+            {isOpen ? (
+              <ChevronDown className="inline size-4" />
+            ) : (
+              <ChevronRight className="inline size-4" />
+            )}
+          </span>
+          <strong>Tool Call:</strong> {toolInvocation.toolName}
+        </button>
+        {/* Render result below, outside the button, to avoid shifting the button */}
         {isOpen && toolInvocation.state === "result" && (
           <div>
             <span className="text-sm font-medium text-gray-400">Result:</span>
@@ -67,7 +73,7 @@ const ToolCall = (props: {
             </pre>
           </div>
         )}
-      </button>
+      </div>
     </div>
   );
 };

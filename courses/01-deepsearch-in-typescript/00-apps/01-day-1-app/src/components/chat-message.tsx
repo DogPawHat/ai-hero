@@ -1,5 +1,7 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 import type { Message } from "ai";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 export type MessagePart = NonNullable<Message["parts"]>[number];
 
@@ -43,6 +45,12 @@ const Markdown = ({ children }: { children: string }) => {
 
 export const ChatMessage = ({ parts, role, userName }: ChatMessageProps) => {
   const isAI = role === "assistant";
+  // State for collapsing tool call details per part index
+  const [openIndexes, setOpenIndexes] = useState<Record<number, boolean>>({});
+
+  const toggleOpen = (idx: number) => {
+    setOpenIndexes((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
 
   return (
     <div className="mb-6">
@@ -55,10 +63,6 @@ export const ChatMessage = ({ parts, role, userName }: ChatMessageProps) => {
           {isAI ? "AI" : userName}
         </p>
         <div className="prose prose-invert max-w-none">
-          {/* Encourage users to hover for more info about MessagePart */}
-          <div className="mb-2 text-xs text-gray-500">
-            Hover over a message part to see all the possible types it can be.
-          </div>
           {parts?.map((part, i) => {
             if (part.type === "text") {
               return (
@@ -68,26 +72,36 @@ export const ChatMessage = ({ parts, role, userName }: ChatMessageProps) => {
               );
             }
             if (part.type === "tool-invocation") {
-              // Show tool call info (basic)
               const { toolInvocation } = part;
+              const isOpen = !!openIndexes[i];
               return (
                 <div
                   key={i}
                   className="my-2 rounded bg-gray-700 p-2"
                   title="ToolInvocationUIPart"
                 >
-                  <div className="font-mono text-xs text-blue-300">
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 font-mono text-xs text-blue-300 hover:underline focus:outline-none"
+                    onClick={() => toggleOpen(i)}
+                  >
+                    {isOpen ? (
+                      <ChevronDown className="inline size-4" />
+                    ) : (
+                      <ChevronRight className="inline size-4" />
+                    )}
                     <strong>Tool Call:</strong> {toolInvocation.toolName}
-                  </div>
-                  <div className="font-mono text-xs text-gray-300">
-                    <pre className="overflow-x-auto">
-                      {JSON.stringify(toolInvocation, null, 2)}
-                    </pre>
-                  </div>
+                  </button>
+                  {isOpen && (
+                    <div className="mt-2 font-mono text-xs text-gray-300">
+                      <pre className="overflow-x-auto">
+                        {JSON.stringify(toolInvocation, null, 2)}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               );
             }
-            // You can add more part types here as needed
             return null;
           })}
         </div>

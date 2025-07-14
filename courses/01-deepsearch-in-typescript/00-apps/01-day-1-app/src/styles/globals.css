@@ -1,3 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --font-geist-sans: "Geist", sans-serif;
+}
+
+@plugin "tailwind-scrollbar";
+@plugin "@tailwindcss/typography";
+@config "../../tailwind.config.ts";

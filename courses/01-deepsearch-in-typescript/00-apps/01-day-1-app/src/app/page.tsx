@@ -28,10 +28,10 @@ export default async function HomePage() {
             {isAuthenticated && (
               <Link
                 href="/"
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="flex size-8 items-center justify-center rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 title="New Chat"
               >
-                <PlusIcon className="h-5 w-5" />
+                <PlusIcon className="size-5" />
               </Link>
             )}
           </div>
@@ -68,7 +68,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <ChatPage userName={userName} />
+      <ChatPage userName={userName} session={session} />
     </div>
   );
 }

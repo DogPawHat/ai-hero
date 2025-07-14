@@ -7,9 +7,7 @@ import {
   text,
   timestamp,
   varchar,
-  json,
   boolean,
-  serial,
 } from "drizzle-orm/pg-core";
 import { type AdapterAccount } from "next-auth/adapters";
 import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
@@ -54,10 +52,10 @@ export const accounts = createTable(
     providerAccountId: varchar("provider_account_id", {
       length: 255,
     }).notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: varchar("token_type", { length: 255 }),
+    refreshToken: text("refresh_token"),
+    accessToken: text("access_token"),
+    expiresAt: integer("expires_at"),
+    tokenType: varchar("token_type", { length: 255 }),
     scope: varchar("scope", { length: 255 }),
     id_token: text("id_token"),
     session_state: varchar("session_state", { length: 255 }),

@@ -39,6 +39,39 @@ const components: Components = {
   ),
 };
 
+const ToolCall = (props: {
+  part: Extract<MessagePart, { type: "tool-invocation" }>;
+  isOpen: boolean;
+  toggleOpen: (idx: number) => void;
+}) => {
+  const { toolInvocation } = props.part;
+  const isOpen = props.isOpen;
+  return (
+    <div className="my-2 rounded bg-gray-700 p-2" title="ToolInvocationUIPart">
+      <button
+        type="button"
+        className="flex items-center gap-1 font-mono text-xs text-blue-300 hover:underline focus:outline-none"
+        onClick={() => props.toggleOpen(props.part.toolInvocation.toolCallId)}
+      >
+        {isOpen ? (
+          <ChevronDown className="inline size-4" />
+        ) : (
+          <ChevronRight className="inline size-4" />
+        )}
+        <strong>Tool Call:</strong> {toolInvocation.toolName}
+        {isOpen && toolInvocation.state === "result" && (
+          <div>
+            <span className="text-sm font-medium text-gray-400">Result:</span>
+            <pre className="mt-1 overflow-x-auto rounded bg-gray-900 p-2 text-sm">
+              {JSON.stringify(toolInvocation.result, null, 2)}
+            </pre>
+          </div>
+        )}
+      </button>
+    </div>
+  );
+};
+
 const Markdown = ({ children }: { children: string }) => {
   return <ReactMarkdown components={components}>{children}</ReactMarkdown>;
 };
@@ -72,34 +105,13 @@ export const ChatMessage = ({ parts, role, userName }: ChatMessageProps) => {
               );
             }
             if (part.type === "tool-invocation") {
-              const { toolInvocation } = part;
-              const isOpen = !!openIndexes[i];
               return (
-                <div
-                  key={i}
-                  className="my-2 rounded bg-gray-700 p-2"
-                  title="ToolInvocationUIPart"
-                >
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 font-mono text-xs text-blue-300 hover:underline focus:outline-none"
-                    onClick={() => toggleOpen(i)}
-                  >
-                    {isOpen ? (
-                      <ChevronDown className="inline size-4" />
-                    ) : (
-                      <ChevronRight className="inline size-4" />
-                    )}
-                    <strong>Tool Call:</strong> {toolInvocation.toolName}
-                  </button>
-                  {isOpen && (
-                    <div className="mt-2 font-mono text-xs text-gray-300">
-                      <pre className="overflow-x-auto">
-                        {JSON.stringify(toolInvocation, null, 2)}
-                      </pre>
-                    </div>
-                  )}
-                </div>
+                <ToolCall
+                  key={part.toolInvocation.toolCallId}
+                  part={part}
+                  isOpen={!!openIndexes[i]}
+                  toggleOpen={() => toggleOpen(i)}
+                />
               );
             }
             return null;

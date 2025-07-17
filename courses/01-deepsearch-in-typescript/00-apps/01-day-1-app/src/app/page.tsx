@@ -3,25 +3,33 @@ import Link from "next/link";
 import { auth } from "~/server/auth/index.ts";
 import { ChatPage } from "./chat.tsx";
 import { AuthButton } from "../components/auth-button.tsx";
-
-const chats = [
-  {
-    id: "1",
-    title: "My First Chat",
-  },
-];
-
-const activeChatId = "1";
+import { getChats, getChat } from "~/server/db/chat-helpers";
+import { C } from "vitest/dist/chunks/reporters.6vxQttCV.js";
 
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ chatId?: string }>;
+  searchParams: Promise<{ id?: string }>;
 }) {
-  const { chatId } = await searchParams;
+  const { id: chatId } = await searchParams;
   const session = await auth();
   const userName = session?.user?.name ?? "Guest";
   const isAuthenticated = !!session?.user;
+  const userId = session?.user?.id;
+
+  // Fetch all chats for the sidebar
+  const chats = userId && isAuthenticated ? await getChats({ userId }) : [];
+
+  const activeChat =
+    userId && chatId ? await getChat({ userId, chatId }) : null;
+
+  const initialMessages =
+    activeChat?.messages.map((msg) => ({
+      id: msg.id,
+      role: msg.role as "user" | "assistant",
+      parts: msg.parts,
+      content: "",
+    })) || [];
 
   return (
     <div className="flex h-screen bg-gray-950">
@@ -33,7 +41,7 @@ export default async function HomePage({
             {isAuthenticated && (
               <Link
                 href="/"
-                className="flex size-8 items-center justify-center rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="flex size-8 items-center justify-center rounded-lg bg-gray-800 text-gray-300 hover:bg-gray-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 title="New Chat"
               >
                 <PlusIcon className="size-5" />
@@ -41,14 +49,14 @@ export default async function HomePage({
             )}
           </div>
         </div>
-        <div className="-mt-1 flex-1 space-y-2 overflow-y-auto px-4 pt-1 scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600">
-          {chats.length > 0 ? (
+        <div className="scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 -mt-1 flex-1 space-y-2 overflow-y-auto px-4 pt-1">
+          {isAuthenticated && chats.length > 0 ? (
             chats.map((chat) => (
               <div key={chat.id} className="flex items-center gap-2">
                 <Link
-                  href={`/?chatId=${chat.id}`}
-                  className={`flex-1 rounded-lg p-3 text-left text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                    chat.id === activeChatId
+                  href={`/?id=${chat.id}`}
+                  className={`flex-1 rounded-lg p-3 text-left text-sm text-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none ${
+                    chat.id === chatId
                       ? "bg-gray-700"
                       : "hover:bg-gray-750 bg-gray-800"
                   }`}
@@ -73,7 +81,12 @@ export default async function HomePage({
         </div>
       </div>
 
-      <ChatPage userName={userName} isAuthenticated={isAuthenticated} chatId={chatId} />
+      <ChatPage
+        userName={userName}
+        isAuthenticated={isAuthenticated}
+        chatId={chatId}
+        initialMessages={initialMessages}
+      />
     </div>
   );
 }

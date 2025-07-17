@@ -3,6 +3,7 @@
 import { ChatMessage } from "~/components/chat-message";
 import { SignInModal } from "~/components/sign-in-modal";
 import { useChat } from "@ai-sdk/react";
+import type { Message } from "ai";
 import { Square } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -13,9 +14,10 @@ interface ChatProps {
   userName: string;
   isAuthenticated: boolean;
   chatId: string | undefined;
+  initialMessages: Array<Message>;
 }
 
-export const ChatPage = ({ userName, isAuthenticated, chatId }: ChatProps) => {
+export const ChatPage = ({ userName, isAuthenticated, chatId, initialMessages = [] }: ChatProps) => {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const router = useRouter();
 
@@ -24,6 +26,7 @@ export const ChatPage = ({ userName, isAuthenticated, chatId }: ChatProps) => {
       body: {
         chatId,
       },
+      initialMessages,
       onError: (error) => {
         // If we get a 401 error, show the sign-in modal
         if (

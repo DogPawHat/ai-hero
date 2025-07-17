@@ -20,6 +20,9 @@ export const env = createEnv({
       .default("development"),
     OPENAI_API_KEY: z.string(),
     SERPER_API_KEY: z.string(),
+    LANGFUSE_SECRET_KEY: z.string().optional(),
+    LANGFUSE_PUBLIC_KEY: z.string().optional(),
+    LANGFUSE_HOST: z.string().url().optional(),
   },
 
   /**
@@ -42,6 +45,9 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     SERPER_API_KEY: process.env.SERPER_API_KEY,
+    LANGFUSE_SECRET_KEY: process.env.LANGFUSE_SECRET_KEY,
+    LANGFUSE_PUBLIC_KEY: process.env.LANGFUSE_PUBLIC_KEY,
+    LANGFUSE_HOST: process.env.LANGFUSE_HOST,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

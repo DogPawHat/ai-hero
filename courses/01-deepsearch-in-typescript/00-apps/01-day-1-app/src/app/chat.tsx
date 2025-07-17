@@ -4,19 +4,26 @@ import { ChatMessage } from "~/components/chat-message";
 import { SignInModal } from "~/components/sign-in-modal";
 import { useChat } from "@ai-sdk/react";
 import { Square } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { Session } from "next-auth";
+import { isNewChatCreated } from "./utils/chat-utils";
 
 interface ChatProps {
   userName: string;
-  session: Session | null;
+  isAuthenticated: boolean;
+  chatId: string | undefined;
 }
 
-export const ChatPage = ({ userName, session }: ChatProps) => {
+export const ChatPage = ({ userName, isAuthenticated, chatId }: ChatProps) => {
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const router = useRouter();
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } =
+  const { messages, input, handleInputChange, handleSubmit, isLoading, data } =
     useChat({
+      body: {
+        chatId,
+      },
       onError: (error) => {
         // If we get a 401 error, show the sign-in modal
         if (
@@ -28,9 +35,16 @@ export const ChatPage = ({ userName, session }: ChatProps) => {
       },
     });
 
-  console.log(messages);
+  // Handle redirect when new chat is created
+  useEffect(() => {
+    const lastDataItem = data?.[data.length - 1];
+    
+    if (lastDataItem && isNewChatCreated(lastDataItem)) {
+      router.push(`?id=${lastDataItem.chatId}`);
+    }
+  }, [data, router]);
 
-  const isAuthenticated = !!session?.user;
+  console.log(messages);
 
   return (
     <>

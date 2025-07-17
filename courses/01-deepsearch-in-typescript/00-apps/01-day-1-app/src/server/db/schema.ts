@@ -153,7 +153,6 @@ export const messages = createTable(
     chatId: varchar("chat_id", { length: 255 })
       .notNull()
       .references(() => chats.id),
-    content: text("content").notNull(),
     parts: jsonb("parts").notNull().$type<Parts>(),
     role: varchar("role", { length: 50 }).notNull(),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true })

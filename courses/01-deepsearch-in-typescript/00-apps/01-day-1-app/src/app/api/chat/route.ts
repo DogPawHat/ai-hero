@@ -6,8 +6,15 @@ import { model } from "~/model";
 import { auth } from "~/server/auth";
 import { searchSerper } from "~/serper";
 import { upsertChat } from "~/server/db/chat-helpers";
+import { Langfuse } from "langfuse";
+import { env } from "~/env";
 
 export const maxDuration = 60;
+
+// Initialize Langfuse client
+const langfuse = new Langfuse({
+  environment: env.NODE_ENV,
+});
 
 export async function POST(request: Request) {
   // Check if user is authenticated
@@ -27,6 +34,13 @@ export async function POST(request: Request) {
 
   // Use the provided chatId directly since it's always a string now
   const currentChatId = chatId;
+  
+  // Create a trace with user and session data
+  const trace = langfuse.trace({
+    sessionId: currentChatId,
+    name: "chat",
+    userId: session.user.id,
+  });
   
   // Create or update the chat with the current messages before streaming
   // This ensures the chat exists even if the stream fails or is cancelled
@@ -51,6 +65,13 @@ export async function POST(request: Request) {
       const result = streamText({
         model,
         messages,
+        experimental_telemetry: {
+          isEnabled: true,
+          functionId: "agent",
+          metadata: {
+            langfuseTraceId: trace.id,
+          },
+        },
         system: `You are a helpful AI assistant that can search the web to provide accurate and up-to-date information.
 
 When a user asks a question, you should:
@@ -73,7 +94,9 @@ Sources:
 
 Each source SHOULD be on its own newline under the "Sources:" heading.
 
-Always prioritize using the search tool to provide the most current and accurate information possible.`,
+Always prioritize using the search tool to provide the most current and accurate information possible.
+
+The current date is ${new Date().toLocaleDateString()}.`,
         tools: {
           searchWeb: {
             parameters: z.object({
@@ -89,6 +112,7 @@ Always prioritize using the search tool to provide the most current and accurate
                 title: result.title,
                 link: result.link,
                 snippet: result.snippet,
+                date: result.date,
               }));
             },
           },
@@ -111,6 +135,9 @@ Always prioritize using the search tool to provide the most current and accurate
             title: updatedTitle,
             messages: updatedMessages,
           });
+
+          // Flush the trace to Langfuse
+          await langfuse.flushAsync();
         },
       });
 

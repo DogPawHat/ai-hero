@@ -4,24 +4,27 @@ import { auth } from "~/server/auth/index.ts";
 import { ChatPage } from "./chat.tsx";
 import { AuthButton } from "../components/auth-button.tsx";
 import { getChats, getChat } from "~/server/db/chat-helpers";
-import { C } from "vitest/dist/chunks/reporters.6vxQttCV.js";
 
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<{ id?: string }>;
 }) {
-  const { id: chatId } = await searchParams;
+  const { id: chatIdFromUrl } = await searchParams;
   const session = await auth();
   const userName = session?.user?.name ?? "Guest";
   const isAuthenticated = !!session?.user;
   const userId = session?.user?.id;
 
+  // Generate stable chatId - use URL param if provided, otherwise generate new
+  const chatId = chatIdFromUrl ?? crypto.randomUUID();
+  const isNewChat = !chatIdFromUrl;
+
   // Fetch all chats for the sidebar
   const chats = userId && isAuthenticated ? await getChats({ userId }) : [];
 
   const activeChat =
-    userId && chatId ? await getChat({ userId, chatId }) : null;
+    userId && chatIdFromUrl ? await getChat({ userId, chatId }) : null;
 
   const initialMessages =
     activeChat?.messages.map((msg) => ({
@@ -82,9 +85,11 @@ export default async function HomePage({
       </div>
 
       <ChatPage
+        key={chatId}
         userName={userName}
         isAuthenticated={isAuthenticated}
         chatId={chatId}
+        isNewChat={isNewChat}
         initialMessages={initialMessages}
       />
     </div>

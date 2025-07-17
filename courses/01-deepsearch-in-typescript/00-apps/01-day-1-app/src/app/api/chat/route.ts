@@ -18,14 +18,15 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as {
     messages: Array<Message>;
-    chatId?: string;
+    chatId: string;
+    isNewChat: boolean;
   };
 
-  const { messages, chatId } = body;
+  const { messages, chatId, isNewChat } = body;
   const userId = session.user.id;
 
-  // Generate a chat ID if not provided
-  const currentChatId = chatId || crypto.randomUUID();
+  // Use the provided chatId directly since it's always a string now
+  const currentChatId = chatId;
   
   // Create or update the chat with the current messages before streaming
   // This ensures the chat exists even if the stream fails or is cancelled
@@ -39,8 +40,8 @@ export async function POST(request: Request) {
 
   return createDataStreamResponse({
     execute: async (dataStream) => {
-      // If this is a new chat (no chatId provided), send the new chat ID to the frontend
-      if (!chatId) {
+      // If this is a new chat (isNewChat is true), send the new chat ID to the frontend
+      if (isNewChat) {
         dataStream.writeData({
           type: "NEW_CHAT_CREATED",
           chatId: currentChatId,

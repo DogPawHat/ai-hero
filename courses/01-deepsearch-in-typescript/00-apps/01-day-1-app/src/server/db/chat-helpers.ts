@@ -41,7 +41,7 @@ export const upsertChat = async (opts: {
         chatId,
         order: index,
         content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content),
-        parts: message.toolInvocations || undefined,
+        parts: message.parts,
         role: message.role,
       }));
 

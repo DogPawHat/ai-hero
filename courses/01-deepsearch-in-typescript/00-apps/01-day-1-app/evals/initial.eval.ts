@@ -35,6 +35,26 @@ evalite("Deep Search Eval", {
           },
         ],
       },
+      {
+        input: [
+          {
+            id: "4",
+            role: "user",
+            content:
+              "What are the differences between Node.js and Deno?",
+          },
+        ],
+      },
+      {
+        input: [
+          {
+            id: "5",
+            role: "user",
+            content:
+              "How does the new React Compiler work?",
+          },
+        ],
+      },
     ];
   },
   task: async (input) => {

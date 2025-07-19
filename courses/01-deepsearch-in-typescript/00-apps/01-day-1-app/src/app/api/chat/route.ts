@@ -48,12 +48,43 @@ export async function POST(request: Request) {
   const title =
     messages[messages.length - 1]?.content?.toString().slice(0, 50) ||
     "New Chat";
-  await upsertChat({
-    userId,
-    chatId: currentChatId,
-    title,
-    messages,
+  
+  // Create a span for the database transaction
+  const dbSpan = trace.span({
+    name: "upsert-chat-transaction",
+    input: {
+      userId,
+      chatId: currentChatId,
+      title,
+      messageCount: messages.length,
+      isNewChat: !messages.some(m => m.role === 'assistant'),
+    },
   });
+
+  try {
+    await upsertChat({
+      userId,
+      chatId: currentChatId,
+      title,
+      messages,
+    });
+    
+    dbSpan.end({
+      output: {
+        success: true,
+        chatId: currentChatId,
+        messageCount: messages.length,
+      },
+    });
+  } catch (error) {
+    dbSpan.end({
+      output: {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      },
+    });
+    throw error;
+  }
 
   return createDataStreamResponse({
     execute: async (dataStream) => {
@@ -180,17 +211,47 @@ The current date and time is ${new Date().toLocaleString("en-US", {
             responseMessages,
           });
 
-          // Update the chat with the complete message history
+          // Create a span for the final chat update
           const updatedTitle =
             updatedMessages[updatedMessages.length - 1]?.content
               ?.toString()
               .slice(0, 50) || title;
-          await upsertChat({
-            userId,
-            chatId: currentChatId,
-            title: updatedTitle,
-            messages: updatedMessages,
+          
+          const finalUpdateSpan = trace.span({
+            name: "update-chat-final",
+            input: {
+              userId,
+              chatId: currentChatId,
+              messageCount: updatedMessages.length,
+              titleLength: updatedTitle.length,
+            },
           });
+
+          try {
+            await upsertChat({
+              userId,
+              chatId: currentChatId,
+              title: updatedTitle,
+              messages: updatedMessages,
+            });
+            
+            finalUpdateSpan.end({
+              output: {
+                success: true,
+                chatId: currentChatId,
+                messageCount: updatedMessages.length,
+                title: updatedTitle,
+              },
+            });
+          } catch (error) {
+            finalUpdateSpan.end({
+              output: {
+                success: false,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            });
+            throw error;
+          }
 
           // Flush the trace to Langfuse
           await langfuse.flushAsync();

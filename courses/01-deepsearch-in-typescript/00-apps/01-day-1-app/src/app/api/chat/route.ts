@@ -120,12 +120,6 @@ The current date and time is ${new Date().toLocaleString("en-US", {
 - Never display raw URLs - always use markdown link format
 - **Include publication dates** when available: [publication title](url) (Published: date)
 - Include multiple citations throughout response
-- List the most relevant sources at end in this format:
-
-Sources:
-[publication title 1](url1) (Published: date1)
-[publication title 2](url2) (Published: date2)
-[publication title 3](url3) (Published: date3)
 `,
         tools: {
           searchWeb: {

@@ -35,17 +35,19 @@ export async function POST(request: Request) {
 
   // Use the provided chatId directly since it's always a string now
   const currentChatId = chatId;
-  
+
   // Create a trace with user and session data
   const trace = langfuse.trace({
     sessionId: currentChatId,
     name: "chat",
     userId: session.user.id,
   });
-  
+
   // Create or update the chat with the current messages before streaming
   // This ensures the chat exists even if the stream fails or is cancelled
-  const title = messages[messages.length - 1]?.content?.toString().slice(0, 50) || "New Chat";
+  const title =
+    messages[messages.length - 1]?.content?.toString().slice(0, 50) ||
+    "New Chat";
   await upsertChat({
     userId,
     chatId: currentChatId,
@@ -75,6 +77,17 @@ export async function POST(request: Request) {
         },
         system: `You are a helpful AI assistant that can search the web and scrape websites to provide accurate and up-to-date information.
 
+## Current Date and Time
+The current date and time is ${new Date().toLocaleString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          timeZoneName: "short",
+        })}.
+
 ## Available Tools (ALWAYS use these in order):
 
 1. **searchWeb** - Use this tool FIRST to search the web for relevant information
@@ -84,6 +97,8 @@ export async function POST(request: Request) {
 - **ALWAYS use the scrapePages tool** for every query to get comprehensive, detailed content
 - **Scrape 4-6 URLs per query** to ensure comprehensive coverage
 - **Use a diverse set of sources** - include different types of websites (news, academic, blogs, official docs, forums, etc.)
+- **Prioritize RECENT sources** when users ask for "up-to-date", "latest", or "current" information
+- **Check publication dates** and mention them in your responses
 - Never skip using scrapePages - it's essential for providing complete answers
 - Use numbered list format when presenting tools and their purposes
 
@@ -91,29 +106,27 @@ export async function POST(request: Request) {
 1. **Step 1**: Use searchWeb to find relevant URLs
 2. **Step 2**: **ALWAYS use scrapePages** to extract full content from **4-6 diverse URLs** found
 3. **Step 3**: Provide comprehensive answers based on both search results AND scraped content
-4. **Step 4**: Always cite sources with inline markdown links
+4. **Step 4**: Always cite sources with inline markdown links and include publication dates
 
 ## Source Diversity Guidelines:
 - Include **at least 4-6 different sources** per query
 - Mix source types: news articles, official documentation, academic papers, expert blogs, forums, government sites
 - Prioritize authoritative sources (.gov, .edu, established news organizations)
+- **For time-sensitive queries**: prioritize sources from the last 24-48 hours
 - Include both recent and established sources for comprehensive context
 
 ## Formatting Requirements:
 - Use publication titles as link text
 - Never display raw URLs - always use markdown link format
+- **Include publication dates** when available: [publication title](url) (Published: date)
 - Include multiple citations throughout response
-- List all sources at end in this format:
+- List the most relevant sources at end in this format:
 
 Sources:
-[publication title 1](url1)
-[publication title 2](url2)
-[publication title 3](url3)
-[publication title 4](url4)
-[publication title 5](url5)
-[publication title 6](url6)
-
-The current date is ${new Date().toLocaleDateString()}.`,
+[publication title 1](url1) (Published: date1)
+[publication title 2](url2) (Published: date2)
+[publication title 3](url3) (Published: date3)
+`,
         tools: {
           searchWeb: {
             parameters: z.object({
@@ -135,7 +148,9 @@ The current date is ${new Date().toLocaleDateString()}.`,
           },
           scrapePages: {
             parameters: z.object({
-              urls: z.array(z.string()).describe("The URLs to scrape for full content"),
+              urls: z
+                .array(z.string())
+                .describe("The URLs to scrape for full content"),
             }),
             execute: async ({ urls }, { abortSignal }) => {
               const results = await bulkCrawlWebsites({
@@ -164,7 +179,7 @@ The current date is ${new Date().toLocaleDateString()}.`,
         maxSteps: 10,
         onFinish: async ({ response }) => {
           const responseMessages = response.messages;
-          
+
           // Merge the response messages with the existing messages
           const updatedMessages = appendResponseMessages({
             messages,
@@ -172,7 +187,10 @@ The current date is ${new Date().toLocaleDateString()}.`,
           });
 
           // Update the chat with the complete message history
-          const updatedTitle = updatedMessages[updatedMessages.length - 1]?.content?.toString().slice(0, 50) || title;
+          const updatedTitle =
+            updatedMessages[updatedMessages.length - 1]?.content
+              ?.toString()
+              .slice(0, 50) || title;
           await upsertChat({
             userId,
             chatId: currentChatId,

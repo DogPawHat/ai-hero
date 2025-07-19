@@ -5,6 +5,7 @@ import { z } from "zod";
 import { model } from "~/model";
 import { auth } from "~/server/auth";
 import { searchSerper } from "~/serper";
+import { bulkCrawlWebsites } from "~/server/scraper";
 import { upsertChat } from "~/server/db/chat-helpers";
 import { Langfuse } from "langfuse";
 import { env } from "~/env";
@@ -72,29 +73,45 @@ export async function POST(request: Request) {
             langfuseTraceId: trace.id,
           },
         },
-        system: `You are a helpful AI assistant that can search the web to provide accurate and up-to-date information.
+        system: `You are a helpful AI assistant that can search the web and scrape websites to provide accurate and up-to-date information.
 
-When a user asks a question, you should:
-1. Always use the searchWeb tool to find relevant information
-2. Provide comprehensive answers based on the search results
-3. Always cite your sources with inline markdown links in your responses
-4. Be thorough in your research - search multiple times if needed to get complete information
+## Available Tools (ALWAYS use these in order):
 
-IMPORTANT: Always format URLs as proper markdown links and organize sources properly:
-- Use the publication title as the link text when possible
-- Never display raw URLs - always wrap them in markdown link format
-- Include multiple citations throughout your response, not just at the end
-- At the end of your response, list all sources in this exact markdown format:
+1. **searchWeb** - Use this tool FIRST to search the web for relevant information
+2. **scrapePages** - Use this tool SECOND to extract full content from specific URLs found in search results
+
+## CRITICAL INSTRUCTIONS:
+- **ALWAYS use the scrapePages tool** for every query to get comprehensive, detailed content
+- **Scrape 4-6 URLs per query** to ensure comprehensive coverage
+- **Use a diverse set of sources** - include different types of websites (news, academic, blogs, official docs, forums, etc.)
+- Never skip using scrapePages - it's essential for providing complete answers
+- Use numbered list format when presenting tools and their purposes
+
+## Workflow:
+1. **Step 1**: Use searchWeb to find relevant URLs
+2. **Step 2**: **ALWAYS use scrapePages** to extract full content from **4-6 diverse URLs** found
+3. **Step 3**: Provide comprehensive answers based on both search results AND scraped content
+4. **Step 4**: Always cite sources with inline markdown links
+
+## Source Diversity Guidelines:
+- Include **at least 4-6 different sources** per query
+- Mix source types: news articles, official documentation, academic papers, expert blogs, forums, government sites
+- Prioritize authoritative sources (.gov, .edu, established news organizations)
+- Include both recent and established sources for comprehensive context
+
+## Formatting Requirements:
+- Use publication titles as link text
+- Never display raw URLs - always use markdown link format
+- Include multiple citations throughout response
+- List all sources at end in this format:
 
 Sources:
 [publication title 1](url1)
 [publication title 2](url2)
 [publication title 3](url3)
-...etc.
-
-Each source SHOULD be on its own newline under the "Sources:" heading.
-
-Always prioritize using the search tool to provide the most current and accurate information possible.
+[publication title 4](url4)
+[publication title 5](url5)
+[publication title 6](url6)
 
 The current date is ${new Date().toLocaleDateString()}.`,
         tools: {
@@ -114,6 +131,33 @@ The current date is ${new Date().toLocaleDateString()}.`,
                 snippet: result.snippet,
                 date: result.date,
               }));
+            },
+          },
+          scrapePages: {
+            parameters: z.object({
+              urls: z.array(z.string()).describe("The URLs to scrape for full content"),
+            }),
+            execute: async ({ urls }, { abortSignal }) => {
+              const results = await bulkCrawlWebsites({
+                urls,
+                maxRetries: 3,
+              });
+
+              if (results.success) {
+                return results.results.map(({ url, result }) => ({
+                  url,
+                  content: result.data,
+                }));
+              } else {
+                return {
+                  error: results.error,
+                  partialResults: results.results.map(({ url, result }) => ({
+                    url,
+                    success: result.success,
+                    content: result.success ? result.data : result.error,
+                  })),
+                };
+              }
             },
           },
         },

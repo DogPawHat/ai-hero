@@ -42,6 +42,7 @@ export const users = createTable("user", {
 
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
+  requests: many(requests),
 }));
 
 export const accounts = createTable(
@@ -168,6 +169,30 @@ export const messagesRelations = relations(messages, ({ one }) => ({
   chat: one(chats, { fields: [messages.chatId], references: [chats.id] }),
 }));
 
+export const requests = createTable(
+  "request",
+  {
+    id: varchar("id", { length: 255 })
+      .notNull()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: varchar("user_id", { length: 255 })
+      .notNull()
+      .references(() => users.id),
+    requestDate: timestamp("request_date", { mode: "date", withTimezone: true })
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+    endpoint: varchar("endpoint", { length: 255 }).notNull(),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
+      .notNull()
+      .default(sql`CURRENT_TIMESTAMP`),
+  },
+  (request) => ({
+    userIdIdx: index("user_request_user_id_idx").on(request.userId),
+    userDateIdx: index("user_request_user_date_idx").on(request.userId, request.requestDate),
+  }),
+);
+
 export declare namespace DB {
   export type User = InferSelectModel<typeof users>;
   export type NewUser = InferInsertModel<typeof users>;
@@ -188,4 +213,7 @@ export declare namespace DB {
 
   export type Message = InferSelectModel<typeof messages>;
   export type NewMessage = InferInsertModel<typeof messages>;
+
+  export type UserRequest = InferSelectModel<typeof requests>;
+  export type NewUserRequest = InferInsertModel<typeof requests>;
 }

@@ -4,6 +4,7 @@ import { appendResponseMessages } from "ai";
 import { streamFromDeepSearch } from "~/deep-search";
 import { auth } from "~/server/auth";
 import { upsertChat } from "~/server/db/chat-helpers";
+import { checkRateLimit, recordRequest } from "~/server/db/rate-limit";
 import { Langfuse } from "langfuse";
 import { env } from "~/env";
 
@@ -30,8 +31,34 @@ export async function POST(request: Request) {
   const { messages, chatId, isNewChat } = body;
   const userId = session.user.id;
 
+  // Check rate limit before processing the request
+  const rateLimitCheck = await checkRateLimit(userId);
+  
+  if (!rateLimitCheck.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: "Rate limit exceeded",
+        message: `You have reached your daily limit of ${rateLimitCheck.limit} requests. Please try again tomorrow.`,
+        currentCount: rateLimitCheck.currentCount,
+        limit: rateLimitCheck.limit,
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": "86400", // 24 hours in seconds
+        },
+      }
+    );
+  }
+
   // Use the provided chatId directly since it's always a string now
   const currentChatId = chatId;
+
+  // Record the successful request (only if not admin to preserve accurate counts)
+  if (!rateLimitCheck.isAdmin) {
+    await recordRequest(userId);
+  }
 
   // Create a trace with user and session data
   const trace = langfuse.trace({
@@ -55,6 +82,7 @@ export async function POST(request: Request) {
       title,
       messageCount: messages.length,
       isNewChat: !messages.some(m => m.role === 'assistant'),
+      isAdmin: rateLimitCheck.isAdmin,
     },
   });
 
@@ -71,6 +99,7 @@ export async function POST(request: Request) {
         success: true,
         chatId: currentChatId,
         messageCount: messages.length,
+        isAdmin: rateLimitCheck.isAdmin,
       },
     });
   } catch (error) {

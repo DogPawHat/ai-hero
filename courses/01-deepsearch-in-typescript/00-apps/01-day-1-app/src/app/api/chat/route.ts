@@ -4,7 +4,7 @@ import { appendResponseMessages } from "ai";
 import { streamFromDeepSearch } from "~/deep-search";
 import { auth } from "~/server/auth";
 import { upsertChat } from "~/server/db/chat-helpers";
-import { checkRateLimit, recordRequest } from "~/server/db/rate-limit";
+import { checkRateLimit, recordRateLimit } from "~/server/redis/rate-limit";
 import { Langfuse } from "langfuse";
 import { env } from "~/env";
 
@@ -31,30 +31,38 @@ export async function POST(request: Request) {
   const { messages, chatId, isNewChat } = body;
   const userId = session.user.id;
 
+  // Configure rate limiting for LLM calls
+  const rateLimitConfig = {
+    maxRequests: 1,
+    maxRetries: 3,
+    windowMs: 20_000, // 20 seconds window
+    keyPrefix: "global_llm",
+  };
+
   // Check rate limit before processing the request
-  const rateLimitCheck = await checkRateLimit(userId);
+  const rateLimitCheck = await checkRateLimit(rateLimitConfig);
 
   if (!rateLimitCheck.allowed) {
-    return new Response("Rate limit exceeded", {
-      status: 429,
-      headers: {
-        "Content-Type": "application/json",
-        "Retry-After": "86400", // 24 hours in seconds
-      },
-    });
+    console.log("Rate limit exceeded, waiting for reset...");
+    const isAllowed = await rateLimitCheck.retry();
+
+    if (!isAllowed) {
+      return new Response("Rate limit exceeded", {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": "20", // 20 seconds
+        },
+      });
+    }
   }
 
-  // Use the provided chatId directly since it's always a string now
-  const currentChatId = chatId;
-
-  // Record the successful request (only if not admin to preserve accurate counts)
-  if (!rateLimitCheck.isAdmin) {
-    await recordRequest(userId);
-  }
+  // Record the successful request
+  await recordRateLimit(rateLimitConfig);
 
   // Create a trace with user and session data
   const trace = langfuse.trace({
-    sessionId: currentChatId,
+    sessionId: chatId,
     name: "chat",
     userId: session.user.id,
   });
@@ -70,7 +78,7 @@ export async function POST(request: Request) {
     name: "upsert-chat-transaction",
     input: {
       userId,
-      chatId: currentChatId,
+      chatId,
       title,
       messageCount: messages.length,
       isNewChat: !messages.some((m) => m.role === "assistant"),
@@ -81,7 +89,7 @@ export async function POST(request: Request) {
   try {
     await upsertChat({
       userId,
-      chatId: currentChatId,
+      chatId,
       title,
       messages,
     });
@@ -89,7 +97,7 @@ export async function POST(request: Request) {
     dbSpan.end({
       output: {
         success: true,
-        chatId: currentChatId,
+        chatId,
         messageCount: messages.length,
         isAdmin: rateLimitCheck.isAdmin,
       },
@@ -110,7 +118,7 @@ export async function POST(request: Request) {
       if (isNewChat) {
         dataStream.writeData({
           type: "NEW_CHAT_CREATED",
-          chatId: currentChatId,
+          chatId,
         });
       }
 
@@ -142,7 +150,7 @@ export async function POST(request: Request) {
             name: "update-chat-final",
             input: {
               userId,
-              chatId: currentChatId,
+              chatId,
               messageCount: updatedMessages.length,
               titleLength: updatedTitle.length,
             },
@@ -151,7 +159,7 @@ export async function POST(request: Request) {
           try {
             await upsertChat({
               userId,
-              chatId: currentChatId,
+              chatId,
               title: updatedTitle,
               messages: updatedMessages,
             });
@@ -159,7 +167,7 @@ export async function POST(request: Request) {
             finalUpdateSpan.end({
               output: {
                 success: true,
-                chatId: currentChatId,
+                chatId,
                 messageCount: updatedMessages.length,
                 title: updatedTitle,
               },

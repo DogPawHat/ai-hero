@@ -33,23 +33,15 @@ export async function POST(request: Request) {
 
   // Check rate limit before processing the request
   const rateLimitCheck = await checkRateLimit(userId);
-  
+
   if (!rateLimitCheck.allowed) {
-    return new Response(
-      JSON.stringify({
-        error: "Rate limit exceeded",
-        message: `You have reached your daily limit of ${rateLimitCheck.limit} requests. Please try again tomorrow.`,
-        currentCount: rateLimitCheck.currentCount,
-        limit: rateLimitCheck.limit,
-      }),
-      {
-        status: 429,
-        headers: {
-          "Content-Type": "application/json",
-          "Retry-After": "86400", // 24 hours in seconds
-        },
-      }
-    );
+    return new Response("Rate limit exceeded", {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": "86400", // 24 hours in seconds
+      },
+    });
   }
 
   // Use the provided chatId directly since it's always a string now
@@ -72,7 +64,7 @@ export async function POST(request: Request) {
   const title =
     messages[messages.length - 1]?.content?.toString().slice(0, 50) ||
     "New Chat";
-  
+
   // Create a span for the database transaction
   const dbSpan = trace.span({
     name: "upsert-chat-transaction",
@@ -81,7 +73,7 @@ export async function POST(request: Request) {
       chatId: currentChatId,
       title,
       messageCount: messages.length,
-      isNewChat: !messages.some(m => m.role === 'assistant'),
+      isNewChat: !messages.some((m) => m.role === "assistant"),
       isAdmin: rateLimitCheck.isAdmin,
     },
   });
@@ -93,7 +85,7 @@ export async function POST(request: Request) {
       title,
       messages,
     });
-    
+
     dbSpan.end({
       output: {
         success: true,
@@ -145,7 +137,7 @@ export async function POST(request: Request) {
             updatedMessages[updatedMessages.length - 1]?.content
               ?.toString()
               .slice(0, 50) || title;
-          
+
           const finalUpdateSpan = trace.span({
             name: "update-chat-final",
             input: {
@@ -163,7 +155,7 @@ export async function POST(request: Request) {
               title: updatedTitle,
               messages: updatedMessages,
             });
-            
+
             finalUpdateSpan.end({
               output: {
                 success: true,

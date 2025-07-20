@@ -2,6 +2,7 @@
 
 import { ChatMessage } from "~/components/chat-message";
 import { SignInModal } from "~/components/sign-in-modal";
+import { ErrorMessage } from "~/components/error-message";
 import { useChat } from "@ai-sdk/react";
 import type { Message } from "ai";
 import { Square } from "lucide-react";
@@ -18,44 +19,46 @@ interface ChatProps {
   initialMessages: Array<Message>;
 }
 
-export const ChatPage = ({ userName, isAuthenticated, chatId, isNewChat, initialMessages = [] }: ChatProps) => {
+export const ChatPage = ({
+  userName,
+  isAuthenticated,
+  chatId,
+  isNewChat,
+  initialMessages = [],
+}: ChatProps) => {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const router = useRouter();
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, data } =
-    useChat({
-      body: {
-        chatId,
-        isNewChat,
-      },
-      initialMessages,
-      onError: (error) => {
-        // If we get a 401 error, show the sign-in modal
-        if (
-          error.message.includes("401") ||
-          error.message.includes("Unauthorized")
-        ) {
-          setShowSignInModal(true);
-        }
-      },
-    });
+  const {
+    messages,
+    input,
+    handleInputChange,
+    handleSubmit,
+    status,
+    data,
+    error,
+  } = useChat({
+    body: {
+      chatId,
+      isNewChat,
+    },
+    initialMessages,
+  });
 
   // Handle redirect when new chat is created
   useEffect(() => {
     const lastDataItem = data?.[data.length - 1];
-    
+
     if (lastDataItem && isNewChatCreated(lastDataItem)) {
       router.push(`?id=${lastDataItem.chatId}`);
     }
   }, [data, router]);
 
-  console.log(messages);
-
   return (
     <>
       <div className="flex flex-1 flex-col">
         <div
-          className="mx-auto w-full max-w-[65ch] flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500"
+          className="scrollbar-thin scrollbar-track-gray-800 scrollbar-thumb-gray-600 hover:scrollbar-thumb-gray-500 mx-auto w-full max-w-[65ch] flex-1 overflow-y-auto p-4"
           role="log"
           aria-label="Chat messages"
         >
@@ -70,6 +73,8 @@ export const ChatPage = ({ userName, isAuthenticated, chatId, isNewChat, initial
             );
           })}
 
+          {error != null && <ErrorMessage message={error.message} />}
+
           {!isAuthenticated && messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="mb-4 text-gray-400">
@@ -77,7 +82,7 @@ export const ChatPage = ({ userName, isAuthenticated, chatId, isNewChat, initial
               </p>
               <button
                 onClick={() => setShowSignInModal(true)}
-                className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-400 focus:outline-none"
               >
                 Sign In
               </button>
@@ -98,8 +103,8 @@ export const ChatPage = ({ userName, isAuthenticated, chatId, isNewChat, initial
                 }
                 autoFocus={isAuthenticated}
                 aria-label="Chat input"
-                className="flex-1 rounded border border-gray-700 bg-gray-800 p-2 text-gray-200 placeholder-gray-400 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50"
-                disabled={isLoading || !isAuthenticated}
+                className="flex-1 rounded border border-gray-700 bg-gray-800 p-2 text-gray-200 placeholder-gray-400 focus:border-gray-500 focus:ring-2 focus:ring-blue-400 focus:outline-none disabled:opacity-50"
+                disabled={status === "streaming" || !isAuthenticated}
               />
               <button
                 type="button"
@@ -109,11 +114,12 @@ export const ChatPage = ({ userName, isAuthenticated, chatId, isNewChat, initial
                     : () => setShowSignInModal(true)
                 }
                 disabled={
-                  isLoading || (!isAuthenticated && input.trim() === "")
+                  status === "streaming" ||
+                  (!isAuthenticated && input.trim() === "")
                 }
-                className="rounded bg-gray-700 px-4 py-2 text-white hover:bg-gray-600 focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:opacity-50 disabled:hover:bg-gray-700"
+                className="rounded bg-gray-700 px-4 py-2 text-white hover:bg-gray-600 focus:border-gray-500 focus:ring-2 focus:ring-blue-400 focus:outline-none disabled:opacity-50 disabled:hover:bg-gray-700"
               >
-                {isLoading ? (
+                {status === "streaming" ? (
                   <Square className="size-4 animate-spin" />
                 ) : isAuthenticated ? (
                   "Send"

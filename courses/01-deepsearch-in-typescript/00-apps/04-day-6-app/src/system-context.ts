@@ -15,20 +15,14 @@ type ScrapeResult = {
   result: string;
 };
 
-const toQueryResult = (
-  query: QueryResultSearchResult,
-) =>
-  [
-    `### ${query.date} - ${query.title}`,
-    query.url,
-    query.snippet,
-  ].join("\n\n");
+const toQueryResult = (query: QueryResultSearchResult) =>
+  [`### ${query.date} - ${query.title}`, query.url, query.snippet].join("\n\n");
 
 export class SystemContext {
   /**
    * The current step in the loop
    */
-  private step = 0;
+  private _step = 0;
 
   /**
    * The history of all queries searched
@@ -39,6 +33,18 @@ export class SystemContext {
    * The history of all URLs scraped
    */
   private scrapeHistory: ScrapeResult[] = [];
+
+  constructor(userQuery: string) {
+    this.queryHistory = [{ query: userQuery, results: [] }];
+  }
+
+  get step() {
+    return this._step;
+  }
+
+  incrementStep() {
+    this._step++;
+  }
 
   shouldStop() {
     return this.step >= 10;

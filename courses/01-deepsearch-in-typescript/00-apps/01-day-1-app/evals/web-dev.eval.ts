@@ -10,6 +10,7 @@ import { devData } from "./dev";
 import { ciData } from "./ci";
 import { regressionData } from "./regression";
 import { env } from "~/env";
+import { AnswerRelevancy } from "./answer-relevancy";
 
 // Factuality check implementation
 export const checkFactuality = async (opts: {
@@ -96,6 +97,7 @@ evalite("Web Dev Eval", {
   },
   scorers: [
     Factuality,
+    AnswerRelevancy,
     {
       name: "Contains Links",
       description: "Checks if the output contains any markdown links.",

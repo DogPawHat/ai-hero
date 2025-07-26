@@ -73,7 +73,7 @@ export const Factuality = createScorer<Message[], string, string>({
 });
 
 // Evaluation definition
-evalite("Deep Search Eval", {
+evalite("Web Dev Eval", {
   data: async (): Promise<{ input: Message[]; expected: string }[]> => {
     return [
       {
@@ -91,26 +91,81 @@ evalite("Deep Search Eval", {
           {
             id: "2",
             role: "user",
-            content: "What are the main features of Next.js 15?",
+            content: "How do I create a new React app with Typescript?",
+          },
+        ],
+        expected: `It should recommend a tool such as create-next-app or create-tsrouter-app to create a new React app with TypeScript. It SHOULD NOT recommend create-react-app as it is deprecated.`,
+      },
+      {
+        input: [
+          {
+            id: "3",
+            role: "user",
+            content: "What are the main features of NextJS 15?",
           },
         ],
         expected: `
-1. @next/codemod CLI: Easily upgrade to the latest Next.js and React versions.
-2. Async Request APIs (Breaking): Incremental step towards a simplified rendering and caching model.
-3. Caching Semantics (Breaking): fetch requests, GET Route Handlers, and client navigations are no longer cached by default.
-4. React 19 Support: Support for React 19, React Compiler (Experimental), and hydration error improvements.
-5. Turbopack Dev (Stable): Performance and stability improvements.
-6. Static Indicator: New visual indicator shows static routes during development.
-7. unstable_after API (Experimental): Execute code after a response finishes streaming.
-8. instrumentation.js API (Stable): New API for server lifecycle observability.
-9. Enhanced Forms (next/form): Enhance HTML forms with client-side navigation.
-10. next.config: TypeScript support for next.config.ts.
-11. Self-hosting Improvements: More control over Cache-Control headers.
-12. Server Actions Security: Unguessable endpoints and removal of unused actions.
-13. Bundling External Packages (Stable): New config options for App and Pages Router.
-14. ESLint 9 Support: Added support for ESLint 9.
-15. Development and Build Performance: Improved build times and Faster Fast Refresh.
+1. @next/codemod CLI for easy upgrades.
+2. Async Request APIs (breaking change).
+3. Caching semantics changes: fetch, GET Route Handlers, and client navigations are no longer cached by default.
+4. React 19 support and React Compiler (experimental).
+5. Turbopack Dev (stable) with performance improvements.
+6. Static indicator for static routes in development.
+7. unstable_after API (experimental) for post-streaming code execution.
+8. instrumentation.js API (stable) for server lifecycle observability.
+9. Enhanced forms (next/form) for client-side navigation.
+10. TypeScript support for next.config.ts.
+11. Self-hosting improvements and more control over Cache-Control headers.
+12. Server Actions security improvements.
+13. Bundling external packages (stable) with new config options.
+14. ESLint 9 support.
+15. Improved development and build performance.
 `,
+      },
+      {
+        input: [
+          {
+            id: "4",
+            role: "user",
+            content:
+              "Help me set up a nx monorepo with a rails backend and a svelte frontend",
+          },
+        ],
+        expected: `To set up a Nx monorepo with a Rails backend and a Svelte frontend:
+1. Install Nx: npx create-nx-workspace@latest my-monorepo
+2. Add Rails: Create a new Rails app inside the monorepo (e.g., in apps/api) using rails new apps/api --api.
+3. Add Svelte: Use Nx plugin for Svelte or add a Svelte app manually in apps/web.
+4. Configure Nx workspace.json/project.json to include both apps.
+5. Use Nx run and Nx serve to manage both apps from the monorepo.
+6. Optionally, set up shared libraries for code sharing.
+Refer to the Nx documentation and plugins for more details.`,
+      },
+      {
+        input: [
+          {
+            id: "5",
+            role: "user",
+            content:
+              "What new features does React Router 7 have over Remix v2 and React Router 6?",
+          },
+        ],
+        expected: `React Router 7 introduces:
+- Improved data APIs and loader patterns.
+- Enhanced route layouts and nested routing.
+- Better integration with React Suspense and async data.
+- More ergonomic APIs for route definitions.
+- Improved error handling and boundary support.
+Compared to Remix v2 and React Router 6, React Router 7 focuses on improved data loading, nested layouts, and developer ergonomics.`,
+      },
+      {
+        input: [
+          {
+            id: "6",
+            role: "user",
+            content: "What is the the current version of Remix?",
+          },
+        ],
+        expected: "The current version of Remix is 2.7.0",
       },
     ];
   },

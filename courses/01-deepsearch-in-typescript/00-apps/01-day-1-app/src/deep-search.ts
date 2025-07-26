@@ -9,9 +9,6 @@ const getSystemPrompt = () => {
   const now = new Date();
   return `You are a helpful AI assistant that can search the web and scrape websites to provide accurate and up-to-date information.
 
-## Important Notes on F1 Sources:
-For any information about F1, prioritize sources from The Race, BBC, or Sky Sports. If you can't find the information from them, use other sources.
-
 ## Current Date and Time
 The current date and time is ${now.toLocaleString("en-US", {
     weekday: "long",

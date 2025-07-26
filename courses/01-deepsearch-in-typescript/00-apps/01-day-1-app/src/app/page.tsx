@@ -32,7 +32,7 @@ export default async function HomePage({
       role: msg.role as "user" | "assistant",
       parts: msg.parts,
       content: "",
-    })) || [];
+    })) ?? [];
 
   return (
     <div className="flex h-screen bg-gray-950">

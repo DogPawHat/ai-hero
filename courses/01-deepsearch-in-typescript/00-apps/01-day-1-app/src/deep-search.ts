@@ -108,7 +108,7 @@ export const streamFromDeepSearch = (opts: {
             .array(z.string())
             .describe("The URLs to scrape for full content"),
         }),
-        execute: async ({ urls }, { abortSignal }) => {
+        execute: async ({ urls }) => {
           const results = await bulkCrawlWebsites({
             urls,
             maxRetries: 3,

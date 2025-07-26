@@ -7,8 +7,8 @@ import { useChat } from "@ai-sdk/react";
 import type { Message } from "ai";
 import { Square } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import type { Session } from "next-auth";
+import { useRouter } from "next/router";
+
 import { isNewChatCreated } from "./utils/chat-utils";
 
 interface ChatProps {

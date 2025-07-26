@@ -70,7 +70,7 @@ export async function POST(request: Request) {
   // Create or update the chat with the current messages before streaming
   // This ensures the chat exists even if the stream fails or is cancelled
   const title =
-    messages[messages.length - 1]?.content?.toString().slice(0, 50) ||
+    messages[messages.length - 1]?.content?.toString().slice(0, 50) ??
     "New Chat";
 
   // Create a span for the database transaction
@@ -82,7 +82,6 @@ export async function POST(request: Request) {
       title,
       messageCount: messages.length,
       isNewChat: !messages.some((m) => m.role === "assistant"),
-      isAdmin: rateLimitCheck.isAdmin,
     },
   });
 
@@ -99,7 +98,6 @@ export async function POST(request: Request) {
         success: true,
         chatId,
         messageCount: messages.length,
-        isAdmin: rateLimitCheck.isAdmin,
       },
     });
   } catch (error) {
@@ -144,7 +142,7 @@ export async function POST(request: Request) {
           const updatedTitle =
             updatedMessages[updatedMessages.length - 1]?.content
               ?.toString()
-              .slice(0, 50) || title;
+              .slice(0, 50) ?? title;
 
           const finalUpdateSpan = trace.span({
             name: "update-chat-final",

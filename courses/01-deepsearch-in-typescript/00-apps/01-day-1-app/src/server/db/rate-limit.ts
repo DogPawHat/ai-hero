@@ -16,15 +16,25 @@ export async function checkRateLimit(userId: string): Promise<{
   // First check if user is admin
   const user = await db.query.users.findFirst({
     where: eq(users.id, userId),
-    columns: { isAdmin: true }
+    columns: { isAdmin: true },
   });
 
   if (!user) {
-    return { allowed: false, currentCount: 0, limit: RATE_LIMIT_PER_DAY, isAdmin: false };
+    return {
+      allowed: false,
+      currentCount: 0,
+      limit: RATE_LIMIT_PER_DAY,
+      isAdmin: false,
+    };
   }
 
   if (user.isAdmin) {
-    return { allowed: true, currentCount: 0, limit: RATE_LIMIT_PER_DAY, isAdmin: true };
+    return {
+      allowed: true,
+      currentCount: 0,
+      limit: RATE_LIMIT_PER_DAY,
+      isAdmin: true,
+    };
   }
 
   // Count requests for today
@@ -33,25 +43,29 @@ export async function checkRateLimit(userId: string): Promise<{
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  const result = await db.select({
-    count: sql<number>`count(*)`.as('count')
-  })
-  .from(requests)
-  .where(
-    and(
-      eq(requests.userId, userId),
-      gte(requests.requestDate, today),
-      lte(requests.requestDate, tomorrow)
-    )
-  );
+  const result = await db
+    .select({
+      count: sql<number>`count(*)`.as("count"),
+    })
+    .from(requests)
+    .where(
+      and(
+        eq(requests.userId, userId),
+        gte(requests.requestDate, today),
+        lte(requests.requestDate, tomorrow),
+      ),
+    );
 
-  const currentCount = result[0]?.count || 0;
+  const currentCount = result[0]?.count ?? 0;
   const allowed = currentCount < RATE_LIMIT_PER_DAY;
 
   return { allowed, currentCount, limit: RATE_LIMIT_PER_DAY, isAdmin: false };
 }
 
-export async function recordRequest(userId: string, endpoint: string = "/api/chat"): Promise<void> {
+export async function recordRequest(
+  userId: string,
+  endpoint = "/api/chat",
+): Promise<void> {
   await db.insert(requests).values({
     userId,
     endpoint,

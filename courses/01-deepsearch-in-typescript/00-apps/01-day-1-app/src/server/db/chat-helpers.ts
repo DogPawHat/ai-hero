@@ -22,7 +22,7 @@ export const upsertChat = async (opts: {
       if (existingChat.userId !== userId) {
         throw new Error("Chat not found");
       }
-      
+
       // Chat exists and belongs to user, delete all existing messages
       await tx.delete(messages).where(eq(messages.chatId, chatId));
     } else {
@@ -40,29 +40,25 @@ export const upsertChat = async (opts: {
         id: crypto.randomUUID(),
         chatId,
         order: index,
-        content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content),
         parts: message.parts,
         role: message.role,
       }));
 
-      await tx.insert(messages).values(messageInserts as any);
+      await tx.insert(messages).values(messageInserts);
     }
 
     // Update chat title and updated_at
     await tx
       .update(chats)
-      .set({ 
+      .set({
         title,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       })
       .where(eq(chats.id, chatId));
   });
 };
 
-export const getChat = async (opts: {
-  userId: string;
-  chatId: string;
-}) => {
+export const getChat = async (opts: { userId: string; chatId: string }) => {
   const { userId, chatId } = opts;
 
   const chat = await db.query.chats.findFirst({
@@ -87,7 +83,6 @@ export const getChat = async (opts: {
     messages: chat.messages.map((message) => ({
       id: message.id,
       order: message.order,
-      content: message.content,
       parts: message.parts,
       role: message.role,
       createdAt: message.createdAt,
@@ -95,9 +90,7 @@ export const getChat = async (opts: {
   };
 };
 
-export const getChats = async (opts: {
-  userId: string;
-}) => {
+export const getChats = async (opts: { userId: string }) => {
   const { userId } = opts;
 
   const userChats = await db.query.chats.findMany({

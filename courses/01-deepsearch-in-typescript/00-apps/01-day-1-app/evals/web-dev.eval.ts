@@ -67,8 +67,6 @@ export const checkFactuality = async (opts: {
 export const Factuality = createScorer<Message[], string, string>({
   name: "Factuality",
   scorer: async ({ input, expected, output }) => {
-    // Extract question from first message content
-    const question = input[0]?.content || "";
     return checkFactuality({
       question: input[0]?.content || "",
       groundTruth: expected!,

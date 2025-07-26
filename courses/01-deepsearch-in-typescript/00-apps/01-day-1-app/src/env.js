@@ -18,7 +18,7 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    OPENAI_API_KEY: z.string(),
+    GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
     SERPER_API_KEY: z.string(),
     LANGFUSE_SECRET_KEY: z.string().optional(),
     LANGFUSE_PUBLIC_KEY: z.string().optional(),
@@ -43,7 +43,7 @@ export const env = createEnv({
     AUTH_DISCORD_SECRET: process.env.AUTH_DISCORD_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     SERPER_API_KEY: process.env.SERPER_API_KEY,
     LANGFUSE_SECRET_KEY: process.env.LANGFUSE_SECRET_KEY,
     LANGFUSE_PUBLIC_KEY: process.env.LANGFUSE_PUBLIC_KEY,

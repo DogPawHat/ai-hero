@@ -165,7 +165,12 @@ Compared to Remix v2 and React Router 6, React Router 7 focuses on improved data
             content: "What is the the current version of Remix?",
           },
         ],
-        expected: "The current version of Remix is 2.7.0",
+        expected: `The current version of Remix is 2.17.0, released on July 25, 2025.
+
+        React Router 7 is the successor to Remix v2 for React users.
+        Remix v3 is being developed as a new JavaScript framework and is aimed specifically at new applications.
+        Remix v2 is in maintenance mode.
+`,
       },
     ];
   },

@@ -1,6 +1,8 @@
 import type { Message, TelemetrySettings } from "ai";
 import { streamText } from "ai";
 import { z } from "zod";
+import { traceAISDKModel } from "evalite/ai-sdk";
+
 import { model } from "~/model";
 import { searchSerper } from "~/serper";
 import { bulkCrawlWebsites } from "~/server/scraper";
@@ -77,7 +79,7 @@ export const streamFromDeepSearch = (opts: {
   telemetry: TelemetrySettings;
 }) =>
   streamText({
-    model,
+    model: traceAISDKModel(model),
     messages: opts.messages,
     maxSteps: 10,
     system: getSystemPrompt(),

@@ -15,7 +15,7 @@ import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
 
 import type { Message } from "ai";
 
-type Parts = Message['parts']
+type Parts = Message["parts"];
 
 /**
  * This is an example of how to use the multi-project schema feature of Drizzle ORM. Use the same
@@ -130,8 +130,10 @@ export const chats = createTable(
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true })
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
-    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true })
-      .default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: timestamp("updated_at", {
+      mode: "date",
+      withTimezone: true,
+    }).default(sql`CURRENT_TIMESTAMP`),
   },
   (chat) => ({
     userIdIdx: index("chat_user_id_idx").on(chat.userId),
@@ -189,9 +191,16 @@ export const requests = createTable(
   },
   (request) => ({
     userIdIdx: index("user_request_user_id_idx").on(request.userId),
-    userDateIdx: index("user_request_user_date_idx").on(request.userId, request.requestDate),
+    userDateIdx: index("user_request_user_date_idx").on(
+      request.userId,
+      request.requestDate,
+    ),
   }),
 );
+
+export const requestRelations = relations(requests, ({ one }) => ({
+  user: one(users, { fields: [requests.userId], references: [users.id] }),
+}));
 
 export declare namespace DB {
   export type User = InferSelectModel<typeof users>;
